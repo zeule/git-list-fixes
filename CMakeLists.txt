@@ -6,7 +6,14 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED On)
 set(CMAKE_CXX_SCAN_FOR_MODULES Off)
 
-find_package(libgit2 1.9 REQUIRED)
+if (NOT WIN32)
+	find_package(PkgConfig REQUIRED)
+	pkg_check_modules(libgit2 IMPORTED_TARGET GLOBAL libgit2>=1.9)
+	add_library(libgit2::libgit2package ALIAS PkgConfig::libgit2)
+else()
+	find_package(libgit2 1.9 REQUIRED)
+endif()
+
 find_package(CLI11 2.5.0 REQUIRED)
 
 add_executable(git-list-fixes
