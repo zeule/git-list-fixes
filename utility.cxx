@@ -39,17 +39,3 @@ void LibgitError::check(int error)
 		throw LibgitError(error);
 	}
 }
-
-std::optional<std::string> configGetString(git_config* cfg, const char* name)
-{
-	std::optional<std::string> res;
-	git_config_entry* entry;
-
-	if (git_config_get_entry(&entry, cfg, name)) {
-		return res;
-	}
-
-	res = entry->value;
-	git_config_entry_free(entry);
-	return res;
-}

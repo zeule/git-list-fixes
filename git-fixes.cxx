@@ -1,6 +1,7 @@
 #include "git-fixes.hxx"
 
 #include "commit.hxx"
+#include "config.hxx"
 #include "filters.hxx"
 #include "utility.hxx"
 
@@ -130,6 +131,15 @@ std::vector<git_oid> removeReferencedCommits(
 	return result;
 }
 
+void loadOptions(Options& options, git_repository& repo)
+{
+	Config config{repo};
+
+	if (std::vector<std::string> fixes = config.readMultiString("list-fixes.fixesMatcher"); !fixes.empty()) {
+		options.fixes_matchers = std::move(fixes);
+	}
+}
+
 std::vector<CommitWithReferences> fixes(
 	const Options& opts, git_repository& repo, const std::vector<git_oid>& blacklist)
 {
@@ -182,7 +192,7 @@ std::vector<CommitWithReferences> fixes(
 			continue;
 		}
 		Commit c{repo, id};
-		std::clog << "Analyzing " << c.logFormat() << std::endl;
+		// std::clog << "Analyzing " << c.logFormat() << std::endl;
 		std::vector<Reference> references{toReferencesArray(fixesFilter.extract(c), Reference::Kind::Fixes)};
 		std::ranges::copy(
 			toReferencesArray(revertFilter.extract(c), Reference::Kind::Revert), std::back_inserter(references));

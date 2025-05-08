@@ -118,6 +118,7 @@ int main(int argc, char** argv)
 
 	libgit2 libgit;
 	std::unique_ptr<git_repository, git_repo_deleter> repo{repository_open(opts.repo_path)};
+	loadOptions(opts, *repo);
 	std::vector<CommitWithReferences> fixupCommits{fixes(opts, *repo, blacklist)};
 
 	for (const CommitWithReferences& c: fixupCommits) {

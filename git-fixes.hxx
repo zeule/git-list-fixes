@@ -37,5 +37,7 @@ struct Options {
 	std::vector<std::string> fixes_matchers{{R"(Fixes:\s([A-Fa-f0-9]+)\s\(".+"\))"}};
 };
 
+void loadOptions(Options& options, git_repository& repo);
+
 std::vector<CommitWithReferences> fixes(
 	const Options& opts, git_repository& repo, const std::vector<git_oid>& blacklist);

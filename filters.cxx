@@ -1,5 +1,6 @@
 #include "filters.hxx"
 
+#include "config.hxx"
 #include "utility.hxx"
 
 #include <git2/commit.h>
@@ -156,10 +157,8 @@ CompoundFilter filterForSources(const Options& opts, git_repository& repo)
 
 	std::string author = opts.author;
 	if (opts.my) {
-		git_config* repoConfig;
-		LibgitError::check(git_repository_config(&repoConfig, &repo));
-		std::optional<std::string> myEmail = configGetString(repoConfig, "user.email");
-		git_config_free(repoConfig);
+		Config cfg{repo};
+		std::optional<std::string> myEmail = cfg.readString("user.email");
 		if (myEmail) {
 			author = *myEmail;
 		}

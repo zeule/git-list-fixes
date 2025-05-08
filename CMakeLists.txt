@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.30 FATAL_ERROR)
 
 project(git-list-fixes)
 
@@ -19,6 +19,8 @@ find_package(CLI11 2.5.0 REQUIRED)
 add_executable(git-list-fixes
 	commit.hxx
 	commit.cxx
+	config.hxx
+	config.cxx
 	filters.hxx
 	filters.cxx
 	git-fixes.hxx

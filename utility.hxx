@@ -4,7 +4,6 @@
 #include <git2/types.h>
 
 #include <cassert>
-#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -24,5 +23,3 @@ public:
 	 */
 	static void check(int error);
 };
-
-std::optional<std::string> configGetString(git_config* cfg, const char* name);
