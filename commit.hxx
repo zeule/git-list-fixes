@@ -1,9 +1,11 @@
 #pragma once
 
+#include "reference.hxx"
+
 #include <git2/types.h>
 
-#include <cassert>
 #include <string>
+#include <string_view>
 #include <vector>
 
 class Commit {
@@ -14,22 +16,15 @@ public:
 
 	operator const git_commit&() const
 	{
-		assert(commit_);
 		return *commit_;
 	}
 
 	const git_oid& id() const;
+	std::string_view message() const;
 	std::string logFormat() const;
 
 private:
 	git_commit* commit_;
-};
-
-struct Reference {
-	enum class Kind { Fixes, Revert };
-
-	git_oid id;
-	Kind kind;
 };
 
 class CommitWithReferences: public Commit {

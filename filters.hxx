@@ -8,22 +8,36 @@
 #include <regex>
 #include <string_view>
 
+class CommitMessageOverrides;
+
 struct CommitFilter {
 	virtual ~CommitFilter() = default;
 	virtual bool operator()(const git_commit& commit) const = 0;
 };
 
 struct ReferenceExtractingFilter: CommitFilter {
+	ReferenceExtractingFilter(const CommitMessageOverrides& messageOverrides);
+
 	virtual std::vector<git_oid> extract(const git_commit& commit) const = 0;
+
+protected:
+	const CommitMessageOverrides& messageOverrides() const { return messageOverrides_; }
+
+	std::string_view commitMessage(const git_commit& commit) const;
+
+private:
+	const CommitMessageOverrides& messageOverrides_;
 };
 
 class StdGitMessageExtractor: public ReferenceExtractingFilter {
+	using base = ReferenceExtractingFilter;
+
 public:
 	bool operator()(const git_commit& commit) const override;
 	std::vector<git_oid> extract(const git_commit& commit) const override;
 
 protected:
-	StdGitMessageExtractor(git_repository& repo, std::string_view messageStart);
+	StdGitMessageExtractor(git_repository& repo, std::string_view messageStart, const CommitMessageOverrides& messageOverrides);
 
 private:
 	git_repository& repo_;
@@ -32,17 +46,19 @@ private:
 
 class RevertFilter: public StdGitMessageExtractor {
 public:
-	RevertFilter(git_repository& repo);
+	RevertFilter(git_repository& repo, const CommitMessageOverrides& messageOverrides);
 };
 
 class CherryPickedFilter: public StdGitMessageExtractor {
 public:
-	CherryPickedFilter(git_repository& repo);
+	CherryPickedFilter(git_repository& repo, const CommitMessageOverrides& messageOverrides);
 };
 
 class FixesFilter: public ReferenceExtractingFilter {
+	using base = ReferenceExtractingFilter;
+
 public:
-	FixesFilter(const std::vector<std::string>& matchExpressions, git_repository& repo);
+	FixesFilter(const std::vector<std::string>& matchExpressions, git_repository& repo, const CommitMessageOverrides& messageOverrides);
 	bool operator()(const git_commit& commit) const override;
 	std::vector<git_oid> extract(const git_commit& commit) const override;
 

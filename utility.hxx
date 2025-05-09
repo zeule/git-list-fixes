@@ -4,6 +4,7 @@
 #include <git2/types.h>
 
 #include <cassert>
+#include <compare>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -23,3 +24,12 @@ public:
 	 */
 	static void check(int error);
 };
+
+std::strong_ordering operator<=>(const git_oid& left, const git_oid& right);
+
+inline bool operator==(const git_oid& left, const git_oid& right)
+{
+	return (left <=> right) == std::strong_ordering::equal;
+}
+
+std::string_view commitMessage(const git_commit& commit);

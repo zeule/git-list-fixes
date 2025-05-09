@@ -4,11 +4,13 @@
 
 #include <git2/commit.h>
 
+#include <cassert>
 #include <utility>
 
 Commit::Commit(git_repository& repo, const git_oid& id)
 {
 	LibgitError::check(git_commit_lookup(&commit_, &repo, &id));
+	assert(commit_);
 }
 
 Commit::Commit(Commit&& other)
@@ -26,6 +28,11 @@ Commit::~Commit()
 const git_oid& Commit::id() const
 {
 	return *git_commit_id(commit_);
+}
+
+std::string_view Commit::message() const
+{
+	return commitMessage(*commit_);
 }
 
 std::string Commit::logFormat() const

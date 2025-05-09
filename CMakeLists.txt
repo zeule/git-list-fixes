@@ -25,6 +25,9 @@ add_executable(git-list-fixes
 	filters.cxx
 	git-fixes.hxx
 	git-fixes.cxx
+	override-list.hxx
+	override-list.cxx
+	reference.hxx
 	utility.hxx
 	utility.cxx
 	main.cxx
