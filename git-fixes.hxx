@@ -8,12 +8,15 @@
 #include <string>
 #include <vector>
 
+class CommitMessageOverrides;
+
 struct Options {
 	std::filesystem::path repo_path{"."};
 	std::string revision{"HEAD"};
 	std::string source{"master"};
 	std::string author;
 	std::string ignore_file;
+	std::filesystem::path overrides_file;
 	std::filesystem::path bl_file;
 	std::filesystem::path bl_path_file;
 	// string db;
@@ -40,4 +43,4 @@ struct Options {
 void loadOptions(Options& options, git_repository& repo);
 
 std::vector<CommitWithReferences> fixes(
-	const Options& opts, git_repository& repo, const std::vector<git_oid>& blacklist);
+	const Options& opts, git_repository& repo, const CommitMessageOverrides& overrides, const std::vector<git_oid>& blacklist);

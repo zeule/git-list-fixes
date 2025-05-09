@@ -1,4 +1,3 @@
-#include "git-fixes.hxx"
 #include "utility.hxx"
 
 #include <CLI/App.hpp>
@@ -9,6 +8,9 @@
 #include <git2/repository.h>
 
 #include <iostream>
+
+#include "git-fixes.hxx"
+#include "override-list.hxx"
 
 struct CommitSHAValidator: CLI::Validator {
 	CommitSHAValidator()
@@ -50,6 +52,10 @@ git_repository* repository_open(const std::filesystem::path& repo)
 int main(int argc, char** argv)
 {
 	Options opts;
+	libgit2 libgit;
+	std::unique_ptr<git_repository, git_repo_deleter> repo{repository_open(opts.repo_path)};
+	loadOptions(opts, *repo);
+
 	CLI::App app;
 	CLI::Option_group* output_options = app.add_option_group("output", "Output controls");
 
@@ -72,9 +78,12 @@ int main(int argc, char** argv)
 		->capture_default_str();
 
 	app.add_option(
-		"--ignore-file", opts.ignore_file,
-		"Specify a file with commits to be added to the commit-list, but not checked for pending fixes. Use this "
-		"to ignore fixes already in the tree");
+		   "--ignore-file", opts.ignore_file,
+		   "Specify a file with commits to be added to the commit-list, but not checked for pending fixes. Use this "
+		   "to ignore fixes already in the tree")
+		->check(CLI::ExistingFile);
+	app.add_option("--overrides-file", opts.overrides_file, "Specify a file with overrides for commit messages")->check(CLI::ExistingFile);
+	;
 	// app.add_option("--data-base,-d", opts.db, "Select specific data-base (set file with fixes.<db>.file)");
 	app.add_option(
 		"--domains", opts.domains,
@@ -116,10 +125,10 @@ int main(int argc, char** argv)
 
 	CLI11_PARSE(app, argc, argv);
 
-	libgit2 libgit;
-	std::unique_ptr<git_repository, git_repo_deleter> repo{repository_open(opts.repo_path)};
-	loadOptions(opts, *repo);
-	std::vector<CommitWithReferences> fixupCommits{fixes(opts, *repo, blacklist)};
+	std::unique_ptr<CommitMessageOverrides> overrides =
+		opts.overrides_file.empty() ? std::make_unique<CommitMessageOverrides>() : std::make_unique<CommitMessageOverrides>(*repo, opts.overrides_file);
+
+	std::vector<CommitWithReferences> fixupCommits{fixes(opts, *repo, *overrides, blacklist)};
 
 	for (const CommitWithReferences& c: fixupCommits) {
 		std::cout << c.logFormat() << std::endl;

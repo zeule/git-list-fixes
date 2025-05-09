@@ -25,11 +25,14 @@ add_executable(git-list-fixes
 	filters.cxx
 	git-fixes.hxx
 	git-fixes.cxx
+	override-list.hxx
+	override-list.cxx
+	reference.hxx
 	utility.hxx
 	utility.cxx
 	main.cxx
 )
-target_link_libraries(git-list-fixes PRIVATE libgit2::libgit2package)
+target_link_libraries(git-list-fixes PRIVATE CLI11::CLI11 libgit2::libgit2package)
 
 install(
 	TARGETS git-list-fixes

@@ -84,16 +84,6 @@ std::vector<Reference> toReferencesArray(const std::vector<git_oid>& ids, Refere
 	return result;
 }
 
-bool operator==(const git_oid& left, const git_oid& right)
-{
-	for (std::size_t i = 0; i < GIT_OID_MAX_SIZE; ++i) {
-		if (left.id[i] != right.id[i]) {
-			return false;
-		}
-	}
-	return true;
-}
-
 bool containsAll(const std::vector<git_oid>& ids, const std::vector<git_oid>& references)
 {
 	return std::ranges::all_of(references, [&ids](const git_oid& ref) { return std::ranges::contains(ids, ref); });
@@ -138,14 +128,18 @@ void loadOptions(Options& options, git_repository& repo)
 	if (std::vector<std::string> fixes = config.readMultiString("list-fixes.fixesMatcher"); !fixes.empty()) {
 		options.fixes_matchers = std::move(fixes);
 	}
+
+	if (std::optional<std::string> overrides = config.readString("list-fixes.overridesFile"); overrides.has_value()) {
+		options.overrides_file = *overrides;
+	}
 }
 
 std::vector<CommitWithReferences> fixes(
-	const Options& opts, git_repository& repo, const std::vector<git_oid>& blacklist)
+	const Options& opts, git_repository& repo, const CommitMessageOverrides& overrides, const std::vector<git_oid>& blacklist)
 {
 	branch_merge_info_oid commits{load_commits(repo, opts.source, opts.revision)};
 
-	RevertFilter revertFilter{repo};
+	RevertFilter revertFilter{repo, overrides};
 	std::vector<git_oid> targetToRemove{blacklist};
 	collectReferences(targetToRemove, repo, commits.second, revertFilter);
 	std::vector<git_oid> targets{commits.second};
@@ -158,11 +152,11 @@ std::vector<CommitWithReferences> fixes(
 	// for the source branch we need only fixup commits, maybe filtered by other rules
 	CompoundFilter sourceFilters{filterForSources(opts, repo)};
 
-	FixesFilter fixesFilter{opts.fixes_matchers, repo};
+	FixesFilter fixesFilter{opts.fixes_matchers, repo, overrides};
 
 	// some of the fixes might be already cherry-picked
 	std::vector<git_oid> cherryPickedToTarget;
-	collectReferences(cherryPickedToTarget, repo, commits.second, CherryPickedFilter{repo});
+	collectReferences(cherryPickedToTarget, repo, commits.second, CherryPickedFilter{repo, overrides});
 
 	std::vector<CommitWithReferences> commitsToCherryPick;
 
