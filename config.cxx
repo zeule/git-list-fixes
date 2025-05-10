@@ -59,6 +59,6 @@ namespace {
 std::vector<std::string> Config::readMultiString(const char* key) const
 {
 	std::vector<std::string> res;
-	LibgitError::check(git_config_get_multivar_foreach(config_, key, nullptr, &readMultiStringCallback, &res));
+	git_config_get_multivar_foreach(config_, key, nullptr, &readMultiStringCallback, &res);
 	return res;
 }
