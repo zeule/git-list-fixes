@@ -29,7 +29,7 @@ add_executable(git-list-fixes
 	utility.cxx
 	main.cxx
 )
-target_link_libraries(git-list-fixes PRIVATE libgit2::libgit2package)
+target_link_libraries(git-list-fixes PRIVATE libgit2::libgit2package CLI11::CLI11)
 
 install(
 	TARGETS git-list-fixes

@@ -43,7 +43,7 @@ struct git_repo_deleter {
 git_repository* repository_open(const std::filesystem::path& repo)
 {
 	git_repository* result;
-	LibgitError::check(git_repository_open(&result, repo.c_str()));
+	LibgitError::check(git_repository_open(&result, repo.generic_string().c_str()));
 	return result;
 }
 
