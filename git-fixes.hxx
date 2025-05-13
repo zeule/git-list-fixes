@@ -19,7 +19,6 @@ struct Options {
 	std::filesystem::path overrides_file;
 	std::filesystem::path bl_file;
 	std::filesystem::path bl_path_file;
-	// string db;
 	bool all_cmdline;
 	bool me{false};
 	bool my{false};
@@ -29,7 +28,6 @@ struct Options {
 	bool stats{false};
 	bool reverse{true};
 	bool stable{true};
-	bool no_stable;
 	bool write_bl{false};
 	bool no_blacklist{false};
 	bool parsable{false};
@@ -38,6 +36,8 @@ struct Options {
 	std::vector<std::string> bl_path;
 	std::vector<std::string> domains;
 	std::vector<std::string> fixes_matchers{{R"(Fixes:\s([A-Fa-f0-9]+)\s\(".+"\))"}};
+	std::vector<std::string> tagMatchers;
+	std::vector<std::string> targetTags;
 };
 
 void loadOptions(Options& options, git_repository& repo);

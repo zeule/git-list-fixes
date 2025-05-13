@@ -132,6 +132,10 @@ void loadOptions(Options& options, git_repository& repo)
 	if (std::optional<std::string> overrides = config.readString("list-fixes.overridesFile"); overrides.has_value()) {
 		options.overrides_file = *overrides;
 	}
+
+	if (std::vector<std::string> tags = config.readMultiString("list-fixes.tagMatcher"); !tags.empty()) {
+		options.tagMatchers = std::move(tags);
+	}
 }
 
 std::vector<CommitWithReferences> fixes(
@@ -150,7 +154,7 @@ std::vector<CommitWithReferences> fixes(
 		targets.end());
 
 	// for the source branch we need only fixup commits, maybe filtered by other rules
-	CompoundFilter sourceFilters{filterForSources(opts, repo)};
+	// CompoundFilter sourceFilters{filterForSources(opts, repo)};
 
 	FixesFilter fixesFilter{opts.fixes_matchers, repo, overrides};
 

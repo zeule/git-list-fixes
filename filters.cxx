@@ -24,6 +24,16 @@ namespace {
 	// (cherry picked from commit b178cd50e13f4dbe50fa4a8759f46eeec58585a2)
 	constexpr std::string_view cherryPickedMessage{"(cherry picked from commit "};
 	constexpr std::size_t cherryPickedLineLength = 68;
+
+	std::vector<std::regex> makeMatchers(const std::vector<std::string>& expressions)
+	{
+		std::vector<std::regex> res;
+		res.reserve(expressions.size());
+		for (const std::string& exp: expressions) {
+			res.emplace_back(exp, std::regex::ECMAScript);
+		}
+		return res;
+	}
 } // namespace
 
 class AuthorFilter: public CommitFilter {
@@ -52,19 +62,11 @@ std::string_view ReferenceExtractingFilter::commitMessage(const git_commit& comm
 	return ::commitMessage(commit);
 }
 
-bool CompoundFilter::operator()(const git_commit& commit) const
-{
-	return std::ranges::all_of(filters_, [&commit](const auto& filter) { return (*filter)(commit); });
-}
-
 FixesFilter::FixesFilter(const std::vector<std::string>& matchExpressions, git_repository& repo, const CommitMessageOverrides& messageOverrides)
 	: base{messageOverrides}
+	, matchers_{makeMatchers(matchExpressions)}
 	, repo_{repo}
 {
-	matchers_.reserve(matchExpressions.size());
-	for (const std::string& exp: matchExpressions) {
-		matchers_.emplace_back(exp, std::regex::ECMAScript);
-	}
 }
 
 bool FixesFilter::operator()(const git_commit& commit) const
@@ -149,6 +151,19 @@ RevertFilter::RevertFilter(git_repository& repo, const CommitMessageOverrides& m
 CherryPickedFilter::CherryPickedFilter(git_repository& repo, const CommitMessageOverrides& messageOverrides)
 	: StdGitMessageExtractor{repo, cherryPickedMessage, messageOverrides}
 {
+}
+
+TagMatcher::TagMatcher(const std::vector<std::string>& matchExpressions, std::vector<std::string> targetTags)
+	: matchers_{makeMatchers(matchExpressions)}
+	, targetTags_{std::move(targetTags)}
+{
+}
+
+bool TagMatcher::operator()(const git_commit& commit) const {}
+
+bool CompoundFilter::operator()(const git_commit& commit) const
+{
+	return std::ranges::all_of(filters_, [&commit](const auto& filter) { return (*filter)(commit); });
 }
 
 std::unique_ptr<ReferenceExtractingFilter> fixesFilter(const Options& opts, git_repository& repo, const CommitMessageOverrides& messageOverrides)

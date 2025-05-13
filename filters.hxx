@@ -54,6 +54,9 @@ public:
 	CherryPickedFilter(git_repository& repo, const CommitMessageOverrides& messageOverrides);
 };
 
+/**
+ * @brief Extracts Fixes: like references
+ */
 class FixesFilter: public ReferenceExtractingFilter {
 	using base = ReferenceExtractingFilter;
 
@@ -65,6 +68,19 @@ public:
 private:
 	std::vector<std::regex> matchers_;
 	git_repository& repo_;
+};
+
+/**
+ * @brief Matches commites that are stable ones
+ */
+class TagMatcher: CommitFilter {
+public:
+	TagMatcher(const std::vector<std::string>& matchExpressions, std::vector<std::string> targetTags);
+	bool operator()(const git_commit& commit) const override;
+
+private:
+	std::vector<std::regex> matchers_;
+	std::vector<std::string> targetTags_;
 };
 
 class CompoundFilter: public CommitFilter {
