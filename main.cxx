@@ -68,8 +68,13 @@ int main(int argc, char** argv)
 	app.add_flag("--stable,!--no-stable", opts.stable, "Show only commits with a stable-tag")->capture_default_str();
 	app.add_option(
 		   "--fixes-matchers", opts.fixes_matchers,
-		   "Regular expressions to extract fixup commits. First capture group must capture commit-id")
+		   "Regular expressions to extract fixup commits. The first capture group must capture commit-id")
 		->capture_default_str();
+	app.add_option(
+		   "--tag-matchers", opts.tagMatchers,
+		   "Regular expressions to find tags in commits. The first capture group must capture the tag")
+		->capture_default_str();
+	app.add_option("--tag-set-file", opts.tagSet, "Path to a file that defines tag set to use");
 	// app.add_option("--file,-f", opts.fixes_file, "Read commit-list from file")->check(CLI::ExistingFile);
 	output_options->add_flag("--stats,-s", opts.stats, "Print some statistics at the end");
 	output_options->add_flag("--patch", opts.patch, "Print patch-filename the fix is for (if available)");
@@ -128,9 +133,9 @@ int main(int argc, char** argv)
 	std::unique_ptr<CommitMessageOverrides> overrides =
 		opts.overrides_file.empty() ? std::make_unique<CommitMessageOverrides>() : std::make_unique<CommitMessageOverrides>(*repo, opts.overrides_file);
 
-	std::vector<CommitWithReferences> fixupCommits{fixes(opts, *repo, *overrides, blacklist)};
+	std::vector<Commit> fixupCommits{fixes(opts, *repo, *overrides, blacklist)};
 
-	for (const CommitWithReferences& c: fixupCommits) {
+	for (const Commit& c: fixupCommits) {
 		std::cout << c.logFormat() << std::endl;
 	}
 

@@ -8,6 +8,27 @@
 #include <cstring>
 #include <format>
 
+namespace {
+	const char* ws = " \t\n\r\f\v";
+
+	inline std::string& rtrim(std::string& s, const char* t = ws)
+	{
+		s.erase(s.find_last_not_of(t) + 1);
+		return s;
+	}
+
+	inline std::string& ltrim(std::string& s, const char* t = ws)
+	{
+		s.erase(0, s.find_first_not_of(t));
+		return s;
+	}
+
+	inline std::string& trim(std::string& s, const char* t = ws)
+	{
+		return ltrim(rtrim(s, t), t);
+	}
+} // namespace
+
 void toLower(std::string& s)
 {
 	std::ranges::transform(s, s.begin(), ::tolower);
@@ -52,4 +73,9 @@ std::string_view commitMessage(const git_commit& commit)
 {
 	const char* message = git_commit_message(&commit);
 	return {message, std::strlen(message)};
+}
+
+std::string& trimWhitespace(std::string& s)
+{
+	return trim(s);
 }

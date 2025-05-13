@@ -3,6 +3,7 @@
 #include "commit.hxx"
 #include "config.hxx"
 #include "filters.hxx"
+#include "tag-set.hxx"
 #include "utility.hxx"
 
 #include <git2/merge.h>
@@ -132,10 +133,17 @@ void loadOptions(Options& options, git_repository& repo)
 	if (std::optional<std::string> overrides = config.readString("list-fixes.overridesFile"); overrides.has_value()) {
 		options.overrides_file = *overrides;
 	}
+
+	if (std::vector<std::string> tags = config.readMultiString("list-fixes.tagMatcher"); !tags.empty()) {
+		options.tagMatchers = std::move(tags);
+	}
 }
 
-std::vector<CommitWithReferences> fixes(
-	const Options& opts, git_repository& repo, const CommitMessageOverrides& overrides, const std::vector<git_oid>& blacklist)
+std::vector<Commit> fixes(
+	const Options& opts,
+	git_repository& repo,
+	const CommitMessageOverrides& overrides,
+	const std::vector<git_oid>& blacklist)
 {
 	branch_merge_info_oid commits{load_commits(repo, opts.source, opts.revision)};
 
@@ -150,18 +158,23 @@ std::vector<CommitWithReferences> fixes(
 		targets.end());
 
 	// for the source branch we need only fixup commits, maybe filtered by other rules
-	CompoundFilter sourceFilters{filterForSources(opts, repo)};
+	// CompoundFilter sourceFilters{filterForSources(opts, repo)};
 
 	FixesFilter fixesFilter{opts.fixes_matchers, repo, overrides};
+	std::map<std::string, std::vector<std::string>> tagSet =
+		opts.tagSet.empty() ? std::map<std::string, std::vector<std::string>>{} : load_tag_set(opts.tagSet);
+	TagMatcher tagsMatcher{
+		tagSet.empty() ? std::vector<std::string>{} : opts.tagMatchers, std::move(tagSet), overrides};
 
 	// some of the fixes might be already cherry-picked
-	std::vector<git_oid> cherryPickedToTarget;
+	std::vector<git_oid>
+		cherryPickedToTarget;
 	collectReferences(cherryPickedToTarget, repo, commits.second, CherryPickedFilter{repo, overrides});
 
-	std::vector<CommitWithReferences> commitsToCherryPick;
+	std::vector<Commit> commitsToCherryPick;
 
 	auto existsInTarget = [&](const git_oid& id) {
-		// TODO the next two check are only for debugging, can to be removed
+		// TODO the next two check are only for debugging, can/to be removed
 		if (std::ranges::contains(cherryPickedToTarget, id)) {
 			return true;
 		}
@@ -170,7 +183,7 @@ std::vector<CommitWithReferences> fixes(
 			return true;
 		}
 
-		if (std::ranges::any_of(commitsToCherryPick, [&id](const CommitWithReferences& c) { return c.id() == id; })) {
+		if (std::ranges::any_of(commitsToCherryPick, [&id](const Commit& c) { return c.id() == id; })) {
 			return true;
 		}
 
@@ -187,6 +200,10 @@ std::vector<CommitWithReferences> fixes(
 		}
 		Commit c{repo, id};
 		// std::clog << "Analyzing " << c.logFormat() << std::endl;
+		if (tagsMatcher(c)) {
+			commitsToCherryPick.push_back(std::move(c));
+			continue;
+		}
 		std::vector<Reference> references{toReferencesArray(fixesFilter.extract(c), Reference::Kind::Fixes)};
 		std::ranges::copy(
 			toReferencesArray(revertFilter.extract(c), Reference::Kind::Revert), std::back_inserter(references));
@@ -195,7 +212,7 @@ std::vector<CommitWithReferences> fixes(
 		}
 
 		if (std::ranges::any_of(references, [&](const Reference& ref) { return existsInTarget(ref.id); })) {
-			commitsToCherryPick.emplace_back(std::move(c), std::move(references));
+			commitsToCherryPick.push_back(std::move(c));
 		}
 	}
 	return commitsToCherryPick;

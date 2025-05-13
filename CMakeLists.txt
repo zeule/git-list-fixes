@@ -6,6 +6,12 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED On)
 set(CMAKE_CXX_SCAN_FOR_MODULES Off)
 
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU|Clang")
+	add_compile_options(-Wall;-Wextra;-Wshadow;-Wformat=2;-Wunused)
+elseif("${CMAKE_CXX_COMPILER_ID}" EQUALS "MSVC")
+	add_compile_options(-W4)
+endif()
+
 if (NOT WIN32)
 	find_package(PkgConfig REQUIRED)
 	pkg_check_modules(libgit2 IMPORTED_TARGET GLOBAL libgit2>=1.9)
@@ -28,11 +34,17 @@ add_executable(git-list-fixes
 	override-list.hxx
 	override-list.cxx
 	reference.hxx
+	tag-set.hxx
+	tag-set.cxx
 	utility.hxx
 	utility.cxx
 	main.cxx
 )
-target_link_libraries(git-list-fixes PRIVATE libgit2::libgit2package CLI11::CLI11)
+
+target_link_libraries(git-list-fixes
+	PRIVATE
+	    libgit2::libgit2package CLI11::CLI11
+)
 
 install(
 	TARGETS git-list-fixes

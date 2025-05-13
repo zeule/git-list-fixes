@@ -33,3 +33,5 @@ inline bool operator==(const git_oid& left, const git_oid& right)
 }
 
 std::string_view commitMessage(const git_commit& commit);
+
+std::string& trimWhitespace(std::string& s);

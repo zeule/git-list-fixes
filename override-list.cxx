@@ -11,27 +11,6 @@
 #include <iostream>
 #include <stdexcept>
 
-namespace {
-	const char* ws = " \t\n\r\f\v";
-
-	inline std::string& rtrim(std::string& s, const char* t = ws)
-	{
-		s.erase(s.find_last_not_of(t) + 1);
-		return s;
-	}
-
-	inline std::string& ltrim(std::string& s, const char* t = ws)
-	{
-		s.erase(0, s.find_first_not_of(t));
-		return s;
-	}
-
-	inline std::string& trim(std::string& s, const char* t = ws)
-	{
-		return ltrim(rtrim(s, t), t);
-	}
-} // namespace
-
 CommitMessageOverrides::CommitMessageOverrides() {}
 
 CommitMessageOverrides::CommitMessageOverrides(git_repository& repo, const std::filesystem::path& filePath)
@@ -59,16 +38,16 @@ CommitMessageOverrides::CommitMessageOverrides(git_repository& repo, const std::
 
 	while (std::getline(file, line)) {
 		++currentLineNumber;
-		trim(line);
+		trimWhitespace(line);
 		if (line.starts_with('#') || (line.empty() && !inMessage)) {
 			continue;
 		}
 
-		if (line.size() > 2 && (line.starts_with('[') && line.ends_with(']')) ||
+		if ((line.size() > 2 && (line.starts_with('[') && line.ends_with(']'))) ||
 		    (line.starts_with('{') && line.ends_with('}'))) {
 			// reached new commit
 			if (inMessage) {
-				trim(message);
+				trimWhitespace(message);
 				entries_.push_back(Entry{.commit = foundId, .message = message});
 				message.clear();
 			}
@@ -95,7 +74,7 @@ CommitMessageOverrides::CommitMessageOverrides(git_repository& repo, const std::
 		}
 	}
 	if (inMessage) {
-		trim(message);
+		trimWhitespace(message);
 		entries_.push_back(Entry{.commit = foundId, .message = std::move(message)});
 	}
 }
