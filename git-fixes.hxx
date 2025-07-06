@@ -5,11 +5,8 @@
 #include <git2/types.h>
 
 #include <filesystem>
-#include <map>
 #include <string>
 #include <vector>
-
-class CommitMessageOverrides;
 
 struct Options {
 	std::filesystem::path repo_path{"."};
@@ -17,7 +14,6 @@ struct Options {
 	std::string source{"master"};
 	std::string author;
 	std::string ignore_file;
-	std::filesystem::path overrides_file;
 	std::filesystem::path bl_file;
 	std::filesystem::path bl_path_file;
 	bool all_cmdline;
@@ -46,5 +42,4 @@ void loadOptions(Options& options, git_repository& repo);
 std::vector<Commit> fixes(
 	const Options& opts,
 	git_repository& repo,
-	const CommitMessageOverrides& overrides,
 	const std::vector<git_oid>& blacklist);

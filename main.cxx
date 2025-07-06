@@ -10,7 +10,6 @@
 #include <iostream>
 
 #include "git-fixes.hxx"
-#include "override-list.hxx"
 
 struct CommitSHAValidator: CLI::Validator {
 	CommitSHAValidator()
@@ -87,8 +86,7 @@ int main(int argc, char** argv)
 		   "Specify a file with commits to be added to the commit-list, but not checked for pending fixes. Use this "
 		   "to ignore fixes already in the tree")
 		->check(CLI::ExistingFile);
-	app.add_option("--overrides-file", opts.overrides_file, "Specify a file with overrides for commit messages")->check(CLI::ExistingFile);
-	;
+
 	// app.add_option("--data-base,-d", opts.db, "Select specific data-base (set file with fixes.<db>.file)");
 	app.add_option(
 		"--domains", opts.domains,
@@ -130,10 +128,7 @@ int main(int argc, char** argv)
 
 	CLI11_PARSE(app, argc, argv);
 
-	std::unique_ptr<CommitMessageOverrides> overrides =
-		opts.overrides_file.empty() ? std::make_unique<CommitMessageOverrides>() : std::make_unique<CommitMessageOverrides>(*repo, opts.overrides_file);
-
-	std::vector<Commit> fixupCommits{fixes(opts, *repo, *overrides, blacklist)};
+	std::vector<Commit> fixupCommits{fixes(opts, *repo, blacklist)};
 
 	for (const Commit& c: fixupCommits) {
 		std::cout << c.logFormat() << std::endl;

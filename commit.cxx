@@ -1,5 +1,6 @@
 #include "commit.hxx"
 
+#include "note.hxx"
 #include "utility.hxx"
 
 #include <git2/commit.h>
@@ -7,14 +8,32 @@
 #include <cassert>
 #include <utility>
 
+namespace {
+	constexpr std::string_view clearMessageCommand{"{clear}\n"};
+}
+
 Commit::Commit(git_repository& repo, const git_oid& id)
 {
 	LibgitError::check(git_commit_lookup(&commit_, &repo, &id));
 	assert(commit_);
+
+	Note note{*this, repo};
+	std::string_view noteText{trimWhitespace(note.text())};
+	if (noteText.empty()) {
+		message_ = std::string{git_commit_message(commit_)};
+	} else {
+		std::string_view::size_type lastClear = noteText.rfind(clearMessageCommand);
+		if (lastClear == std::string_view::npos) {
+			message_ = std::string{git_commit_message(commit_)} + std::string{noteText};
+		} else {
+			message_ = std::string{noteText.substr(lastClear + clearMessageCommand.size())};
+		}
+	}
 }
 
 Commit::Commit(Commit&& other)
 	: commit_{std::exchange(other.commit_, nullptr)}
+	, message_{std::move(other.message_)}
 {
 }
 
@@ -28,11 +47,6 @@ Commit::~Commit()
 const git_oid& Commit::id() const
 {
 	return *git_commit_id(commit_);
-}
-
-std::string_view Commit::message() const
-{
-	return commitMessage(*commit_);
 }
 
 std::string Commit::logFormat() const
@@ -57,6 +71,11 @@ std::string Commit::logFormat() const
 	result += git_commit_message(commit_);
 
 	return result;
+}
+
+std::string_view Commit::autorEmail() const
+{
+	return {git_commit_author(commit_)->email};
 }
 
 CommitWithReferences::CommitWithReferences(git_repository& repo, const git_oid& id, std::vector<Reference> references)

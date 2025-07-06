@@ -5,7 +5,6 @@
 #include <git2/types.h>
 
 #include <string>
-#include <string_view>
 #include <vector>
 
 class Commit {
@@ -20,11 +19,16 @@ public:
 	}
 
 	const git_oid& id() const;
-	std::string_view message() const;
+
+	const std::string& message() const { return message_; }
+
 	std::string logFormat() const;
+
+	std::string_view autorEmail() const;
 
 private:
 	git_commit* commit_;
+	std::string message_;
 };
 
 class CommitWithReferences: public Commit {

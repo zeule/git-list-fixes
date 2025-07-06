@@ -130,24 +130,16 @@ void loadOptions(Options& options, git_repository& repo)
 		options.fixes_matchers = std::move(fixes);
 	}
 
-	if (std::optional<std::string> overrides = config.readString("list-fixes.overridesFile"); overrides.has_value()) {
-		options.overrides_file = *overrides;
-	}
-
 	if (std::vector<std::string> tags = config.readMultiString("list-fixes.tagMatcher"); !tags.empty()) {
 		options.tagMatchers = std::move(tags);
 	}
 }
 
-std::vector<Commit> fixes(
-	const Options& opts,
-	git_repository& repo,
-	const CommitMessageOverrides& overrides,
-	const std::vector<git_oid>& blacklist)
+std::vector<Commit> fixes(const Options& opts, git_repository& repo, const std::vector<git_oid>& blacklist)
 {
 	branch_merge_info_oid commits{load_commits(repo, opts.source, opts.revision)};
 
-	RevertFilter revertFilter{repo, overrides};
+	RevertFilter revertFilter{repo};
 	std::vector<git_oid> targetToRemove{blacklist};
 	collectReferences(targetToRemove, repo, commits.second, revertFilter);
 	std::vector<git_oid> targets{commits.second};
@@ -160,16 +152,15 @@ std::vector<Commit> fixes(
 	// for the source branch we need only fixup commits, maybe filtered by other rules
 	// CompoundFilter sourceFilters{filterForSources(opts, repo)};
 
-	FixesFilter fixesFilter{opts.fixes_matchers, repo, overrides};
+	FixesFilter fixesFilter{opts.fixes_matchers, repo};
 	std::map<std::string, std::vector<std::string>> tagSet =
 		opts.tagSet.empty() ? std::map<std::string, std::vector<std::string>>{} : load_tag_set(opts.tagSet);
-	TagMatcher tagsMatcher{
-		tagSet.empty() ? std::vector<std::string>{} : opts.tagMatchers, std::move(tagSet), overrides};
+	TagMatcher tagsMatcher{tagSet.empty() ? std::vector<std::string>{} : opts.tagMatchers, std::move(tagSet)};
 
 	// some of the fixes might be already cherry-picked
 	std::vector<git_oid>
 		cherryPickedToTarget;
-	collectReferences(cherryPickedToTarget, repo, commits.second, CherryPickedFilter{repo, overrides});
+	collectReferences(cherryPickedToTarget, repo, commits.second, CherryPickedFilter{repo});
 
 	std::vector<Commit> commitsToCherryPick;
 

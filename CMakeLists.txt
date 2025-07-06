@@ -31,8 +31,8 @@ add_executable(git-list-fixes
 	filters.cxx
 	git-fixes.hxx
 	git-fixes.cxx
-	override-list.hxx
-	override-list.cxx
+	note.hxx
+	note.cxx
 	reference.hxx
 	tag-set.hxx
 	tag-set.cxx

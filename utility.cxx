@@ -9,21 +9,21 @@
 #include <format>
 
 namespace {
-	const char* ws = " \t\n\r\f\v";
+	constexpr std::string_view ws{" \t\n\r\f\v"};
 
-	inline std::string& rtrim(std::string& s, const char* t = ws)
+	inline std::string& rtrim(std::string& s, std::string_view t = ws)
 	{
 		s.erase(s.find_last_not_of(t) + 1);
 		return s;
 	}
 
-	inline std::string& ltrim(std::string& s, const char* t = ws)
+	inline std::string& ltrim(std::string& s, std::string_view t = ws)
 	{
 		s.erase(0, s.find_first_not_of(t));
 		return s;
 	}
 
-	inline std::string& trim(std::string& s, const char* t = ws)
+	inline std::string& trim(std::string& s, std::string_view t = ws)
 	{
 		return ltrim(rtrim(s, t), t);
 	}
@@ -72,10 +72,20 @@ std::strong_ordering operator<=>(const git_oid& left, const git_oid& right)
 std::string_view commitMessage(const git_commit& commit)
 {
 	const char* message = git_commit_message(&commit);
-	return {message, std::strlen(message)};
+	return {message};
 }
 
 std::string& trimWhitespace(std::string& s)
 {
 	return trim(s);
+}
+
+std::string_view trimWhitespace(std::string_view s)
+{
+	if (s.empty()) {
+		return s;
+	}
+	const std::string_view::size_type first = s.find_first_not_of(ws);
+	const std::string_view::size_type last = s.find_last_not_of(ws);
+	return s.substr(first, last - first + 1);
 }
