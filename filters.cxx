@@ -59,7 +59,7 @@ FixesFilter::FixesFilter(const std::vector<std::string>& matchExpressions, git_r
 bool FixesFilter::operator()(const Commit& commit) const
 {
 	auto end{std::cregex_iterator()};
-	std::string_view message{commitMessage(commit)};
+	std::string_view message{commit.message()};
 	for (const std::regex& matcher: matchers_) {
 		for (auto iter = std::cregex_iterator(message.data(), message.data() + message.size(), matcher); iter != end;
 		     ++iter) {
@@ -82,7 +82,7 @@ std::vector<git_oid> FixesFilter::extract(const Commit& commit) const
 {
 	std::vector<git_oid> result;
 
-	std::string_view message{commitMessage(commit)};
+	std::string_view message{commit.message()};
 
 	for (const std::regex& matcher: matchers_) {
 		const char* msg = message.data();
@@ -102,14 +102,14 @@ std::vector<git_oid> FixesFilter::extract(const Commit& commit) const
 
 bool StdGitMessageExtractor::operator()(const Commit& commit) const
 {
-	std::string_view message{commitMessage(commit)};
+	std::string_view message{commit.message()};
 	return message.find(messageStart_) != std::string_view::npos;
 }
 
 std::vector<git_oid> StdGitMessageExtractor::extract(const Commit& commit) const
 {
 	std::vector<git_oid> result;
-	std::string_view message{commitMessage(commit)};
+	std::string_view message{commit.message()};
 
 	auto lineStart = message.find(messageStart_);
 	if (lineStart != std::string_view::npos && message.size() >= lineStart + messageStart_.size() + 40) {
@@ -154,7 +154,7 @@ TagMatcher::TagMatcher(
 
 bool TagMatcher::operator()(const Commit& commit) const
 {
-	std::string_view message{commitMessage(commit)};
+	std::string_view message{commit.message()};
 
 	for (const std::regex& matcher: matchers_) {
 		const char* msg = message.data();

@@ -69,12 +69,6 @@ std::strong_ordering operator<=>(const git_oid& left, const git_oid& right)
 	return r > 0 ? std::strong_ordering::greater : (r < 0 ? std::strong_ordering::less : std::strong_ordering::equal);
 }
 
-std::string_view commitMessage(const git_commit& commit)
-{
-	const char* message = git_commit_message(&commit);
-	return {message};
-}
-
 std::string& trimWhitespace(std::string& s)
 {
 	return trim(s);
