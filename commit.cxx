@@ -6,10 +6,25 @@
 #include <git2/commit.h>
 
 #include <cassert>
+#include <chrono>
+#include <format>
 #include <utility>
 
 namespace {
 	constexpr std::string_view clearMessageCommand{"{clear}\n"};
+
+	std::string indentLines(const char* text, unsigned width)
+	{
+		std::string result;
+		std::string indent(width, ' ');
+		for (const char* p = text; *p; ++p) {
+			result += *p;
+			if (*p == '\n') {
+				[[unlikely]] result += indent;
+			}
+		}
+		return result;
+	}
 }
 
 Commit::Commit(git_repository& repo, const git_oid& id)
@@ -62,13 +77,20 @@ std::string Commit::logFormat() const
 	result.resize(result.size() + 40);
 	git_oid_fmt(&result[7], git_commit_id(commit_));
 	result += "\nAuthor: ";
+
 	const git_signature* signature = git_commit_author(commit_);
 	result += signature->name;
 	result += " <";
 	result += signature->email;
 	result += ">\n";
 
-	result += git_commit_message(commit_);
+	std::chrono::sys_seconds commitTime{std::chrono::seconds{git_commit_time(commit_)}};
+	int timeZoneOffset = git_commit_time_offset(commit_);
+
+	result +=
+		std::format("Date:   {:%a %b %d %T %Y} {:+03}{:02}\n\n", commitTime, timeZoneOffset / 60, timeZoneOffset % 60);
+
+	result += std::format("{:{}}{}", "", 4, indentLines(git_commit_message(commit_), 4));
 
 	return result;
 }
