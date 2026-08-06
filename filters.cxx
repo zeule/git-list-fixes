@@ -34,14 +34,14 @@ namespace {
 
 class AuthorFilter: public CommitFilter {
 public:
-	AuthorFilter(const std::string& author)
-		: author_{author}
+	AuthorFilter(std::string email)
+		: email_{std::move(email)}
 	{
 	}
 
-	bool operator()(const Commit& commit) const override { return author_ == commit.autorEmail(); }
+	bool operator()(const Commit& commit) const override { return email_ == commit.autorEmail(); }
 
-	const std::string& author_;
+	std::string email_;
 };
 
 FixesFilter::FixesFilter(const std::vector<std::string>& matchExpressions, git_repository& repo)
@@ -180,15 +180,14 @@ bool CompoundFilter::operator()(const Commit& commit) const
 
 std::unique_ptr<ReferenceExtractingFilter> fixesFilter(const Options& opts, git_repository& repo)
 {
+	if (opts.fixes_matchers.empty()) {
+		throw std::runtime_error("Fixes matchers are not defined");
+	}
 	return std::make_unique<FixesFilter>(opts.fixes_matchers, repo);
 }
 
 CompoundFilter filterForSources(const Options& opts, git_repository& repo)
 {
-	if (opts.fixes_matchers.empty()) {
-		throw std::runtime_error("Fixes matchers are not defined");
-	}
-
 	std::string author = opts.author;
 	if (opts.my) {
 		Config cfg{repo};
@@ -199,7 +198,7 @@ CompoundFilter filterForSources(const Options& opts, git_repository& repo)
 	}
 	CompoundFilter result;
 	if (!author.empty()) {
-		result.push_back(std::make_unique<AuthorFilter>(opts.author));
+		result.push_back(std::make_unique<AuthorFilter>(std::move(author)));
 	}
 
 	return result;

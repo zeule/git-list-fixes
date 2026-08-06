@@ -185,6 +185,8 @@ std::vector<Commit> fixes(const Options& opts, git_repository& repo, const std::
 		return true;
 	};
 
+	CompoundFilter otherFilters{filterForSources(opts, repo)};
+
 	for (const git_oid& id: std::ranges::reverse_view{commits.first}) {
 		if (std::ranges::contains(blacklist, id) || std::ranges::contains(cherryPickedToTarget, id)) {
 			continue;
@@ -199,6 +201,10 @@ std::vector<Commit> fixes(const Options& opts, git_repository& repo, const std::
 		std::ranges::copy(
 			toReferencesArray(revertFilter.extract(c), Reference::Kind::Revert), std::back_inserter(references));
 		if (references.empty()) {
+			continue;
+		}
+
+		if (!otherFilters(c)) {
 			continue;
 		}
 
