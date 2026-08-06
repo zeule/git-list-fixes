@@ -8,7 +8,7 @@ set(CMAKE_CXX_SCAN_FOR_MODULES Off)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU|Clang")
 	add_compile_options(-Wall;-Wextra;-Wshadow;-Wformat=2;-Wunused)
-elseif("${CMAKE_CXX_COMPILER_ID}" EQUALS "MSVC")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	add_compile_options(-W4)
 endif()
 

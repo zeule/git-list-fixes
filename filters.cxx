@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cassert>
 #include <format>
+#include <ranges>
 #include <regex>
 #include <stdexcept>
 #include <vector>
