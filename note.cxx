@@ -13,7 +13,7 @@ Note::Note(const Commit& commit, git_repository& repo)
 	}
 }
 
-Note::Note(Note&& other)
+Note::Note(Note&& other) noexcept
 	: note_{std::exchange(other.note_, nullptr)}
 {
 }

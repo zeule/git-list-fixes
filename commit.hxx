@@ -10,7 +10,7 @@
 class Commit {
 public:
 	Commit(git_repository& repo, const git_oid& id);
-	Commit(Commit&& other);
+	Commit(Commit&& other) noexcept;
 	~Commit();
 
 	operator const git_commit&() const

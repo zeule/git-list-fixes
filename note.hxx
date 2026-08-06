@@ -9,7 +9,7 @@ class Commit;
 class Note {
 public:
 	Note(const Commit& commit, git_repository& repo);
-	Note(Note&& other);
+	Note(Note&& other) noexcept;
 	~Note();
 
 	std::string_view text() const;

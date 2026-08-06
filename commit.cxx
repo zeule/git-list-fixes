@@ -46,7 +46,7 @@ Commit::Commit(git_repository& repo, const git_oid& id)
 	}
 }
 
-Commit::Commit(Commit&& other)
+Commit::Commit(Commit&& other) noexcept
 	: commit_{std::exchange(other.commit_, nullptr)}
 	, message_{std::move(other.message_)}
 {
