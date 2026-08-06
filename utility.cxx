@@ -4,9 +4,11 @@
 #include <git2/config.h>
 
 #include <algorithm>
+#include <array>
 #include <cctype>
-#include <cstring>
+#include <cstdio>
 #include <format>
+#include <memory>
 
 namespace {
 	constexpr std::string_view ws{" \t\n\r\f\v"};
@@ -24,9 +26,14 @@ namespace {
 	}
 
 	inline std::string& trim(std::string& s, std::string_view t = ws)
-	{
-		return ltrim(rtrim(s, t), t);
-	}
+	{ return ltrim(rtrim(s, t), t); }
+#ifdef _MSC_VER
+	FILE* popen(const char* command, const char* modes)
+	{ return ::_popen(command, modes); }
+
+	int pclose(FILE* stream)
+	{ return ::_pclose(stream); }
+#endif
 } // namespace
 
 void toLower(std::string& s)
@@ -82,4 +89,26 @@ std::string_view trimWhitespace(std::string_view s)
 	const std::string_view::size_type first = s.find_first_not_of(ws);
 	const std::string_view::size_type last = s.find_last_not_of(ws);
 	return s.substr(first, last - first + 1);
+}
+
+namespace {
+	struct PClose {
+		void operator()(FILE* stream) { ::pclose(stream); }
+	};
+} // namespace
+
+std::string launch(const char* command)
+{
+	std::unique_ptr<FILE, PClose> pipe(::popen(command, "r"));
+	if (!pipe) {
+		return "ERROR";
+	}
+	std::string result;
+	std::array<char, 128> buffer{};
+	while (!::feof(pipe.get())) {
+		if (::fgets(buffer.data(), static_cast<int>(buffer.size()), pipe.get()) != nullptr) {
+			result += buffer.data();
+		}
+	}
+	return result;
 }

@@ -6,13 +6,18 @@
 #include <git2/commit.h>
 
 #include <cassert>
-#include <chrono>
-#include <format>
 #include <utility>
+
+#include "git-list-fixes-config.hxx"
+#ifndef Git_FOUND
+#	include <chrono>
+#	include <format>
+#endif
 
 namespace {
 	constexpr std::string_view clearMessageCommand{"{clear}\n"};
 
+#ifndef Git_FOUND
 	std::string indentLines(const char* text, unsigned width)
 	{
 		std::string result;
@@ -25,6 +30,7 @@ namespace {
 		}
 		return result;
 	}
+#endif
 }
 
 Commit::Commit(git_repository& repo, const git_oid& id)
@@ -66,6 +72,13 @@ const git_oid& Commit::id() const
 
 std::string Commit::logFormat() const
 {
+#ifdef Git_FOUND
+	std::string command = "git log --color=always -1 ";
+	std::size_t id_pos = command.size();
+	command.resize(command.size() + 40);
+	git_oid_fmt(&command[id_pos], git_commit_id(commit_));
+	return launch(command.c_str());
+#else
 	// commit b178cd50e13f4dbe50fa4a8759f46eeec58585a2
 	// Author: Eugene Shalygin <eugene.shalygin@gmail.com>
 	// Date: Mon Apr 21 10:01:12 2025 +0200
@@ -93,6 +106,7 @@ std::string Commit::logFormat() const
 	result += std::format("{:{}}{}", "", 4, indentLines(git_commit_message(commit_), 4));
 
 	return result;
+#endif
 }
 
 std::string_view Commit::autorEmail() const

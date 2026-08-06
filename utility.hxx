@@ -34,3 +34,4 @@ inline bool operator==(const git_oid& left, const git_oid& right)
 
 std::string& trimWhitespace(std::string& s);
 std::string_view trimWhitespace(std::string_view s);
+std::string launch(const char* command);

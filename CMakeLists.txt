@@ -22,6 +22,8 @@ endif()
 
 find_package(CLI11 2.5.0 REQUIRED)
 
+find_package(Git)
+
 add_executable(git-list-fixes
 	commit.hxx
 	commit.cxx
@@ -40,6 +42,9 @@ add_executable(git-list-fixes
 	utility.cxx
 	main.cxx
 )
+
+configure_file(git-list-fixes-config.hxx.cmake git-list-fixes-config.hxx @ONLY)
+target_include_directories(git-list-fixes PRIVATE ${CMAKE_BINARY_DIR})
 
 target_link_libraries(git-list-fixes
 	PRIVATE
