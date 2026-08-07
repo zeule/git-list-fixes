@@ -176,9 +176,9 @@ int main(int argc, char** argv)
 		}
 	} else {
 		if (opts.group) {
-			std::map<std::string_view, std::vector<Commit>> groups;
+			std::map<std::string, std::vector<Commit>> groups;
 			for (Commit& c: fixupCommits) {
-				groups[c.autorEmail()].push_back(std::move(c));
+				groups[c.authorWithEmail()].push_back(std::move(c));
 			}
 			for (const auto& [group, commits]: groups) {
 				std::cout << group << ":\n";

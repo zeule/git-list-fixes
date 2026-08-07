@@ -29,7 +29,8 @@ public:
 
 	std::string logFormat(std::string_view format = {}) const;
 
-	std::string_view autorEmail() const;
+	std::string_view authorEmail() const;
+	std::string authorWithEmail() const;
 
 private:
 	git_commit* commit_;

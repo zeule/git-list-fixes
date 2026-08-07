@@ -6,6 +6,7 @@
 #include <git2/commit.h>
 
 #include <cassert>
+#include <format>
 #include <utility>
 
 #include "git-list-fixes-config.hxx"
@@ -124,9 +125,15 @@ std::string Commit::logFormat(std::string_view format) const
 #endif
 }
 
-std::string_view Commit::autorEmail() const
+std::string_view Commit::authorEmail() const
 {
 	return {git_commit_author(commit_)->email};
+}
+
+std::string Commit::authorWithEmail() const
+{
+	const git_signature* signature = git_commit_author(commit_);
+	return std::format("{} <{}>", signature->name, signature->email);
 }
 
 CommitWithReferences::CommitWithReferences(git_repository& repo, const git_oid& id, std::vector<Reference> references)

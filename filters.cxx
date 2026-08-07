@@ -40,7 +40,7 @@ public:
 	{
 	}
 
-	bool operator()(const Commit& commit) const override { return email_ == commit.autorEmail(); }
+	bool operator()(const Commit& commit) const override { return email_ == commit.authorEmail(); }
 
 	std::string email_;
 };
