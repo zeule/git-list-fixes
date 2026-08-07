@@ -27,7 +27,7 @@ public:
 
 	const std::string& message() const { return message_; }
 
-	std::string logFormat() const;
+	std::string logFormat(std::string_view format = {}) const;
 
 	std::string_view autorEmail() const;
 

@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include "git-fixes.hxx"
+#include "git-list-fixes-config.hxx"
 
 struct CommitSHAValidator: CLI::Validator {
 	CommitSHAValidator()
@@ -76,10 +77,10 @@ int main(int argc, char** argv)
 	app.add_option("--tag-set-file", opts.tagSet, "Path to a file that defines tag set to use");
 	// app.add_option("--file,-f", opts.fixes_file, "Read commit-list from file")->check(CLI::ExistingFile);
 	output_options->add_flag("--stats,-s", opts.stats, "Print some statistics at the end");
-	output_options->add_flag("--patch", opts.patch, "Print patch-filename the fix is for (if available)");
-	output_options->add_flag("--parsable,-p", opts.parsable, "Print machine readable output");
-	output_options->add_flag("--grouping,!--no-grouping", opts.group, "Group fixes by committer")
-		->capture_default_str();
+	output_options->add_flag("--grouping,!--no-grouping", opts.group, "Group fixes by committer")->capture_default_str();
+#ifdef Git_FOUND
+	output_options->add_option("--format", opts.log_format, "`git log` format")->capture_default_str();
+#endif
 
 	app.add_option(
 		   "--ignore-file", opts.ignore_file,
@@ -131,7 +132,7 @@ int main(int argc, char** argv)
 	std::vector<Commit> fixupCommits{fixes(opts, *repo, blacklist)};
 
 	for (const Commit& c: fixupCommits) {
-		std::cout << c.logFormat() << std::endl;
+		std::cout << c.logFormat(opts.log_format);
 	}
 
 	return 0;

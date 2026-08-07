@@ -76,14 +76,23 @@ const git_oid& Commit::id() const
 	return *git_commit_id(commit_);
 }
 
-std::string Commit::logFormat() const
+std::string Commit::logFormat(std::string_view format) const
 {
 #ifdef Git_FOUND
 	std::string command = "git log --color=always -1 ";
+	if (!format.empty()) {
+		command.reserve(command.size() + 11 + format.size());
+		command += " --format=";
+		command += format;
+		command += ' ';
+	}
 	std::size_t id_pos = command.size();
 	command.resize(command.size() + 40);
 	git_oid_fmt(&command[id_pos], git_commit_id(commit_));
-	return launch(command.c_str());
+	std::string result{launch(command.c_str())};
+	std::size_t firstNewLinePos = result.find('\n');
+	bool needsTrailingNewline = firstNewLinePos != result.size() - 1;
+	return needsTrailingNewline ? result + '\n' : result;
 #else
 	// commit b178cd50e13f4dbe50fa4a8759f46eeec58585a2
 	// Author: Eugene Shalygin <eugene.shalygin@gmail.com>

@@ -27,8 +27,7 @@ struct Options {
 	bool stable{true};
 	bool write_bl{false};
 	bool no_blacklist{false};
-	bool parsable{false};
-	bool patch{false};
+	std::string log_format;
 	std::vector<std::string> path;
 	std::vector<std::string> bl_path;
 	std::vector<std::string> domains;
