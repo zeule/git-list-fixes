@@ -8,6 +8,7 @@
 #include <git2/repository.h>
 
 #include <iostream>
+#include <map>
 
 #include "git-fixes.hxx"
 #include "git-list-fixes-config.hxx"
@@ -131,8 +132,48 @@ int main(int argc, char** argv)
 
 	std::vector<Commit> fixupCommits{fixes(opts, *repo, blacklist)};
 
-	for (const Commit& c: fixupCommits) {
-		std::cout << c.logFormat(opts.log_format);
+	auto printGroup = [&opts](const std::vector<Commit>& commits) {
+		for (const Commit& c: commits) {
+			std::cout << c.logFormat(opts.log_format);
+		}
+	};
+
+	auto printGroupWithIndent = [&opts](const std::vector<Commit>& commits, unsigned indent = 0) {
+		std::string indentedNewLine = "\n";
+		for (unsigned i = 0; i < indent; ++i) {
+			indentedNewLine += '\t';
+		}
+		for (const Commit& commit: commits) {
+			std::string cLog = commit.logFormat(opts.log_format);
+			if (cLog.empty()) {
+				continue;
+			}
+			for (unsigned i = 0; i < indent; ++i) {
+				std::cout << '\t';
+			}
+			for (std::size_t i = 0; i < cLog.size() - 1; ++i) {
+				char c = cLog[i];
+				if (c == '\n') {
+					std::cout << indentedNewLine;
+				} else {
+					std::cout << c;
+				}
+			}
+			std::cout << cLog.back();
+		}
+	};
+
+	if (opts.group) {
+		std::map<std::string_view, std::vector<Commit>> groups;
+		for (Commit& c: fixupCommits) {
+			groups[c.autorEmail()].push_back(std::move(c));
+		}
+		for (const auto& [group, commits]: groups) {
+			std::cout << group << ":\n";
+			printGroupWithIndent(commits, 1);
+		}
+	} else {
+		printGroup(fixupCommits);
 	}
 
 	return 0;
