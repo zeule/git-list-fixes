@@ -187,6 +187,13 @@ std::vector<Commit> fixes(const Options& opts, git_repository& repo, const std::
 
 	CompoundFilter otherFilters{filterForSources(opts, repo)};
 
+	struct Revertion {
+		git_oid id;
+		std::vector<git_oid> reverts;
+	};
+
+	std::vector<Revertion> revertingFixes;
+
 	for (const git_oid& id: std::ranges::reverse_view{commits.first}) {
 		if (std::ranges::contains(blacklist, id) || std::ranges::contains(cherryPickedToTarget, id)) {
 			continue;
@@ -198,19 +205,51 @@ std::vector<Commit> fixes(const Options& opts, git_repository& repo, const std::
 			continue;
 		}
 		std::vector<Reference> references{toReferencesArray(fixesFilter.extract(c), Reference::Kind::Fixes)};
-		std::ranges::copy(
-			toReferencesArray(revertFilter.extract(c), Reference::Kind::Revert), std::back_inserter(references));
-		if (references.empty()) {
+		std::vector<Reference> reverts;
+		std::ranges::copy(toReferencesArray(revertFilter.extract(c), Reference::Kind::Revert), std::back_inserter(reverts));
+		if (references.empty() && reverts.empty()) {
 			continue;
 		}
+
+		std::ranges::copy(reverts, std::back_inserter(references));
 
 		if (!otherFilters(c)) {
 			continue;
 		}
 
 		if (std::ranges::any_of(references, [&](const Reference& ref) { return existsInTarget(ref.id); })) {
+			if (!reverts.empty()) {
+				Revertion revertion;
+				revertion.id = c.id();
+				std::ranges::transform(reverts, std::back_inserter(revertion.reverts), [](const Reference& r) { return r.id; });
+				revertingFixes.push_back(revertion);
+			}
 			commitsToCherryPick.push_back(std::move(c));
 		}
 	}
+
+	std::vector<Revertion> annihilatedRevertions;
+	for (const Revertion& reverter: revertingFixes) {
+		if (std::ranges::all_of(reverter.reverts, [&commitsToCherryPick](const git_oid& revertee) {
+				return std::ranges::contains(commitsToCherryPick, revertee, &Commit::id);
+			})) {
+			annihilatedRevertions.push_back(reverter);
+		}
+	}
+
+	auto removeCommit = [](std::vector<Commit>& from, const git_oid& id) {
+		auto iter = std::ranges::find(from, id, &Commit::id);
+		if (iter != from.end()) {
+			from.erase(iter);
+		}
+	};
+
+	for (const Revertion& reverter: annihilatedRevertions) {
+		for (const git_oid& revertee: reverter.reverts) {
+			removeCommit(commitsToCherryPick, revertee);
+		}
+		removeCommit(commitsToCherryPick, reverter.id);
+	}
+
 	return commitsToCherryPick;
 }

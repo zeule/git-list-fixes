@@ -65,6 +65,12 @@ Commit::~Commit()
 	}
 }
 
+Commit& Commit::operator=(Commit&& other) noexcept
+{
+	std::swap(commit_, other.commit_);
+	return *this;
+}
+
 const git_oid& Commit::id() const
 {
 	return *git_commit_id(commit_);

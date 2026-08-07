@@ -13,6 +13,11 @@ public:
 	Commit(Commit&& other) noexcept;
 	~Commit();
 
+	Commit& operator=(Commit&& other) noexcept;
+
+	Commit(const Commit&) = delete;
+	Commit& operator=(const Commit&) = delete;
+
 	operator const git_commit&() const
 	{
 		return *commit_;
