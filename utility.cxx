@@ -2,6 +2,7 @@
 
 #include <git2/commit.h>
 #include <git2/config.h>
+#include <git2/oid.h>
 
 #include <algorithm>
 #include <array>
@@ -110,5 +111,12 @@ std::string launch(const char* command)
 			result += buffer.data();
 		}
 	}
+	return result;
+}
+
+std::string oid_to_string(const git_oid& oid)
+{
+	std::string result(40, 0);
+	git_oid_fmt(result.data(), &oid);
 	return result;
 }

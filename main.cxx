@@ -77,11 +77,13 @@ int main(int argc, char** argv)
 		->capture_default_str();
 	app.add_option("--tag-set-file", opts.tagSet, "Path to a file that defines tag set to use");
 	// app.add_option("--file,-f", opts.fixes_file, "Read commit-list from file")->check(CLI::ExistingFile);
-	output_options->add_flag("--stats,-s", opts.stats, "Print some statistics at the end");
-	output_options->add_flag("--grouping,!--no-grouping", opts.group, "Group fixes by committer")->capture_default_str();
+	CLI::Option* output_stats = output_options->add_flag("--stats,-s", opts.stats, "Print some statistics at the end");
+	CLI::Option* output_grouping = output_options->add_flag("--grouping,!--no-grouping", opts.group, "Group fixes by committer")->capture_default_str();
 #ifdef Git_FOUND
-	output_options->add_option("--format", opts.log_format, "`git log` format")->capture_default_str();
+	CLI::Option* output_format = output_options->add_option("--format", opts.log_format, "`git log` format")->capture_default_str();
 #endif
+	CLI::Option* output_script =
+		output_options->add_flag("--script", opts.output_script, "Print out a sequence of `git cherry-pick` commands")->capture_default_str();
 
 	app.add_option(
 		   "--ignore-file", opts.ignore_file,
@@ -128,6 +130,11 @@ int main(int argc, char** argv)
 	optMe->excludes(optCommitter)->excludes(optAll);
 	optAll->excludes(optCommitter)->excludes(optMe);
 
+	output_script->excludes(output_grouping, output_stats);
+#ifdef Git_FOUND
+	output_script->excludes(output_format);
+#endif
+
 	CLI11_PARSE(app, argc, argv);
 
 	std::vector<Commit> fixupCommits{fixes(opts, *repo, blacklist)};
@@ -163,17 +170,23 @@ int main(int argc, char** argv)
 		}
 	};
 
-	if (opts.group) {
-		std::map<std::string_view, std::vector<Commit>> groups;
-		for (Commit& c: fixupCommits) {
-			groups[c.autorEmail()].push_back(std::move(c));
-		}
-		for (const auto& [group, commits]: groups) {
-			std::cout << group << ":\n";
-			printGroupWithIndent(commits, 1);
+	if (opts.output_script) {
+		for (const Commit& commit: fixupCommits) {
+			std::cout << "git cherry-pick -x " << oid_to_string(commit.id()) << '\n';
 		}
 	} else {
-		printGroup(fixupCommits);
+		if (opts.group) {
+			std::map<std::string_view, std::vector<Commit>> groups;
+			for (Commit& c: fixupCommits) {
+				groups[c.autorEmail()].push_back(std::move(c));
+			}
+			for (const auto& [group, commits]: groups) {
+				std::cout << group << ":\n";
+				printGroupWithIndent(commits, 1);
+			}
+		} else {
+			printGroup(fixupCommits);
+		}
 	}
 
 	return 0;
