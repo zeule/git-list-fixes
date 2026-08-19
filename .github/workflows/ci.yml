@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  linux:
+    name: Linux (GCC)
+    # ubuntu-latest is still 24.04, whose apt libgit2-dev (1.7.2) and
+    # libcli11-dev (2.1.2) are both older than this project requires
+    # (libgit2 >= 1.9, CLI11 >= 2.5.0).
+    runs-on: ubuntu-26.04
+    env:
+      CC: gcc
+      CXX: g++
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build pkg-config \
+            libgit2-dev libcli11-dev
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+  macos:
+    name: macOS (Clang)
+    runs-on: macos-latest
+    env:
+      CC: clang
+      CXX: clang++
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install cmake ninja pkg-config libgit2 cli11
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$(brew --prefix libgit2);$(brew --prefix cli11)"
+
+      - name: Build
+        run: cmake --build build
+
+  windows:
+    name: Windows (MSVC)
+    runs-on: windows-latest
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Cache vcpkg
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.VCPKG_ROOT }}
+            !${{ env.VCPKG_ROOT }}/buildtrees
+            !${{ env.VCPKG_ROOT }}/downloads
+            !${{ env.VCPKG_ROOT }}/packages
+          key: vcpkg-x64-windows-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: |
+            vcpkg-x64-windows-
+
+      - name: Bootstrap vcpkg
+        shell: bash
+        run: |
+          if [ ! -d "$VCPKG_ROOT/.git" ]; then
+            git clone --depth 1 https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
+          fi
+          "$VCPKG_ROOT/bootstrap-vcpkg.bat"
+
+      - name: Install dependencies (vcpkg)
+        shell: bash
+        run: "\"$VCPKG_ROOT/vcpkg\" install libgit2 cli11 --triplet x64-windows"
+
+      - name: Configure
+        shell: bash
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DVCPKG_TARGET_TRIPLET=x64-windows
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
