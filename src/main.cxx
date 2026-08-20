@@ -54,8 +54,12 @@ int main(int argc, char** argv)
 {
 	Options opts;
 	libgit2 libgit;
-	std::unique_ptr<git_repository, git_repo_deleter> repo{repository_open(opts.repo_path)};
-	loadOptions(opts, *repo);
+	std::unique_ptr<git_repository, git_repo_deleter> repo;
+	try {
+		repo.reset(repository_open(opts.repo_path));
+		loadOptions(opts, *repo);
+	} catch (LibgitError&) {
+	}
 
 	CLI::App app;
 	CLI::Option_group* output_options = app.add_option_group("output", "Output controls");
@@ -136,57 +140,64 @@ int main(int argc, char** argv)
 #endif
 
 	CLI11_PARSE(app, argc, argv);
-
-	std::vector<Commit> fixupCommits{fixes(opts, *repo, blacklist)};
-
-	auto printGroup = [&opts](const std::vector<Commit>& commits) {
-		for (const Commit& c: commits) {
-			std::cout << c.logFormat(opts.log_format);
+	try {
+		if (!repo) {
+			repo.reset(repository_open(opts.repo_path));
 		}
-	};
+		std::vector<Commit> fixupCommits{fixes(opts, *repo, blacklist)};
 
-	auto printGroupWithIndent = [&opts](const std::vector<Commit>& commits, unsigned indent = 0) {
-		std::string indentedNewLine = "\n";
-		for (unsigned i = 0; i < indent; ++i) {
-			indentedNewLine += '\t';
-		}
-		for (const Commit& commit: commits) {
-			std::string cLog = commit.logFormat(opts.log_format);
-			if (cLog.empty()) {
-				continue;
+		auto printGroup = [&opts](const std::vector<Commit>& commits) {
+			for (const Commit& c: commits) {
+				std::cout << c.logFormat(opts.log_format);
 			}
+		};
+
+		auto printGroupWithIndent = [&opts](const std::vector<Commit>& commits, unsigned indent = 0) {
+			std::string indentedNewLine = "\n";
 			for (unsigned i = 0; i < indent; ++i) {
-				std::cout << '\t';
+				indentedNewLine += '\t';
 			}
-			for (std::size_t i = 0; i < cLog.size() - 1; ++i) {
-				char c = cLog[i];
-				if (c == '\n') {
-					std::cout << indentedNewLine;
-				} else {
-					std::cout << c;
+			for (const Commit& commit: commits) {
+				std::string cLog = commit.logFormat(opts.log_format);
+				if (cLog.empty()) {
+					continue;
 				}
+				for (unsigned i = 0; i < indent; ++i) {
+					std::cout << '\t';
+				}
+				for (std::size_t i = 0; i < cLog.size() - 1; ++i) {
+					char c = cLog[i];
+					if (c == '\n') {
+						std::cout << indentedNewLine;
+					} else {
+						std::cout << c;
+					}
+				}
+				std::cout << cLog.back();
 			}
-			std::cout << cLog.back();
-		}
-	};
+		};
 
-	if (opts.output_script) {
-		for (const Commit& commit: fixupCommits) {
-			std::cout << "git cherry-pick -x " << oid_to_string(commit.id()) << '\n';
-		}
-	} else {
-		if (opts.group) {
-			std::map<std::string, std::vector<Commit>> groups;
-			for (Commit& c: fixupCommits) {
-				groups[c.authorWithEmail()].push_back(std::move(c));
-			}
-			for (const auto& [group, commits]: groups) {
-				std::cout << group << ":\n";
-				printGroupWithIndent(commits, 1);
+		if (opts.output_script) {
+			for (const Commit& commit: fixupCommits) {
+				std::cout << "git cherry-pick -x " << oid_to_string(commit.id()) << '\n';
 			}
 		} else {
-			printGroup(fixupCommits);
+			if (opts.group) {
+				std::map<std::string, std::vector<Commit>> groups;
+				for (Commit& c: fixupCommits) {
+					groups[c.authorWithEmail()].push_back(std::move(c));
+				}
+				for (const auto& [group, commits]: groups) {
+					std::cout << group << ":\n";
+					printGroupWithIndent(commits, 1);
+				}
+			} else {
+				printGroup(fixupCommits);
+			}
 		}
+	} catch (std::exception& ex) {
+		std::cerr << "Error: " << ex.what() << std::endl;
+		return 2;
 	}
 
 	return 0;
