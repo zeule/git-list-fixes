@@ -1,0 +1,127 @@
+---
+# We'll use defaults from the LLVM style, but with 4 columns indentation.
+BasedOnStyle: LLVM
+Language: Cpp
+IndentWidth: 4
+ColumnLimit: 160
+
+AccessModifierOffset: -4
+AlignAfterOpenBracket: AlwaysBreak
+AlignConsecutiveMacros: true
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Left
+AlignOperands: true
+AlignTrailingComments: false
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: false
+# unused AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments: true
+# BinPackParameters: false
+# ? BraceWrapping:
+# unused BreakAfterJavaFieldAnnotations: (bool)
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: WebKit
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeComma
+# BreakInheritanceList: BeforeComma
+BreakStringLiterals: true
+# CommentPragmas:
+CompactNamespaces: false
+#ConstructorInitializerAllOnOneLineOrOnePerLine:
+ConstructorInitializerIndentWidth: 4
+#ContinuationIndentWidth:
+Cpp11BracedListStyle: true
+# unused DerivePointerAlignment:
+# unused DisableFormat:
+# unused ExperimentalAutoDetectBinPacking:
+EmptyLineBeforeAccessModifier: LogicalBlock
+FixNamespaceComments: true
+ForEachMacros: ['BOOST_FOREACH', 'FOREACH', 'Q_FOREACH', 'foreach']
+TypenameMacros: ['STACK_OF', 'LIST_ENTRY']
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           '^"\./.*"' # local project includes "./name"
+    Priority:        10
+  - Regex:           '^"\.\./.*"' # local project includes "../name"
+    Priority:        11
+  - Regex:           '"[[:alnum:]]+\-config\.h"' # project config files
+    Priority:        12
+  - Regex:           '^"[[:alnum:]_/\.]+"' # "name.h"
+    Priority:        20
+  - Regex:           '^<.+/.+\.h.*>' # <some/name.h>
+    Priority:        30
+  - Regex:           '^<Q[[:alnum:]+/]+' # Qt includes
+    Priority:        38
+  - Regex:           '^<boost/.+)' # boost includes
+    Priority:        39
+  - Regex:           '^<[[:alnum:]]+\.h>' # <name.h>
+    Priority:        40
+  - Regex:           '^<[a-z_]+>' # C++ std includes <name>
+    Priority:        50
+
+  - Regex:           '"[[:alnum:]]+\-export\.h"' # project export files
+    Priority:        100
+#unused IncludeIsMainRegex:
+IndentCaseLabels: true
+IndentPPDirectives: AfterHash
+IndentWrappedFunctionNames: false
+InsertBraces: true
+# InsertNewlineAtEOF: true v16
+KeepEmptyLinesAtTheStartOfBlocks: false
+# unused MacroBlockBegin:
+# unused MacroBlockEnd:
+MaxEmptyLinesToKeep: 2
+NamespaceIndentation: All
+NamespaceMacros: ['QT_BEGIN_NAMESPACE']
+# unused PenaltyBreakComment:
+# unused PenaltyBreakFirstLessLess:
+# unused PenaltyBreakString:
+# unused PenaltyBreakTemplateDeclaration:
+# unused PenaltyExcessCharacter:
+PenaltyReturnTypeOnItsOwnLine: 1000
+PointerAlignment: Left
+QualifierAlignment: Custom
+QualifierOrder: ['static', 'inline', 'constexpr', 'const', 'volatile', 'restrict', 'type'] # 'friend' in 16
+#RawStringFormats:
+ReflowComments: true
+SeparateDefinitionBlocks: Always
+ShortNamespaceLines: 5
+SortIncludes: true
+SortUsingDeclarations: true
+SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCpp11BracedList: false
+# unused SpaceBeforeCtorInitializerColon: false
+SpaceBeforeInheritanceColon: false
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: false
+SpaceInEmptyParentheses: false
+SpacesInParens: Never
+SpacesBeforeTrailingComments: 1
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+SpacesInContainerLiterals: false
+SpacesInLineCommentPrefix:
+  Minimum: 1
+  Maximum: -1
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+Standard: Latest
+StatementMacros: ['Q_EMIT', 'Q_UNUSED', 'X_UNUSED', 'Q_OBJECT']
+TabWidth: 4
+UseTab: AlignWithSpaces
+...
+
+# kate: syntax YAML;
