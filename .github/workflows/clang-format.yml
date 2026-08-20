@@ -1,0 +1,30 @@
+name: clang-format Check
+on: [pull_request]
+jobs:
+  formatting-check:
+    name: Code formatting (clang-format)
+    # Only meaningful as a PR check: it diffs the PR's changes against its
+    # base branch, so it needs both refs and doesn't apply to plain pushes.
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang-format
+
+      # Checks only the lines this PR actually touches against
+      # .clang-format, not the whole (currently-unformatted) codebase.
+      - name: Check formatting of changed lines
+        run: |
+          DIFF=$(git clang-format --diff "${{ github.event.pull_request.base.sha }}")
+          if [ "$DIFF" != "no modified files to format" ] && [ -n "$DIFF" ]; then
+            echo "$DIFF"
+            echo "::error::Changed lines are not formatted per .clang-format. Run 'git clang-format' locally (against ${{ github.event.pull_request.base.sha }}) and commit the result."
+            exit 1
+          fi
+          echo "Formatting OK."
